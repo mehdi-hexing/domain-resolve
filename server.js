@@ -24,7 +24,7 @@ async function resolveDomain(domain) {
         ips.push(...ipv6Results.value);
     }
 
-    return ips;
+    return [...new Set(ips)];
 }
 
 app.get('/resolve', async (req, res) => {
@@ -47,15 +47,26 @@ app.get('/resolve', async (req, res) => {
                 error: true,
                 message: 'No IP addresses found for the specified domain',
                 domain: cleanDomain,
-                ips: []
+                total_ips: 0,
+                total_groups: 0,
+                groups: []
             });
+        }
+
+        ips.sort((a, b) => a.length - b.length || a.localeCompare(b));
+
+        const groupSize = 40;
+        const groups = [];
+        for (let i = 0; i < ips.length; i += groupSize) {
+            groups.push(ips.slice(i, i + groupSize));
         }
 
         return res.status(200).json({
             success: true,
             domain: cleanDomain,
-            count: ips.length,
-            ips: ips
+            total_ips: ips.length,
+            total_groups: groups.length,
+            groups: groups
         });
 
     } catch (err) {
